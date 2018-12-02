@@ -16,7 +16,7 @@ from characteristic_functions import (charac_function,
                                       charac_function_multiscale)
 from utils.graph_tools import laplacian
 
-sys.path.append('../')
+
 
 
 TAUS = [1, 10, 25, 50]
@@ -27,29 +27,6 @@ ETA_MIN = 0.80
 NB_FILTERS = 2
 
 base=10
-
-#factorial  4= 4*3*2*1
-
-def myfunc(nums ):
-#    max_sig=int(np.max(np.log10(nums)))
-#    min_sig=int(np.min(np.log10(nums)))  
-    res={}
-    for i in nums:
-        key=int(np.log10(i))
-        if(res.has_key(key)):
-            res[key].append(i)
-        else:
-            res[key]=[i,]
-    for i in res.keys():
-        temp=np.average(res[i]),len(res[i])
-        res[i]=temp
-        
-    return res
-
-
-
-
-
 
 
 
@@ -96,10 +73,11 @@ def heat_diffusion_ind(graph, taus=TAUS, order = ORDER, proc = PROC):
    
     n_nodes, _ = a.shape
     
-    thres = np.vectorize(lambda x : x if x > 1e-4 * 1.0 / n_nodes else 0)
+    #thres = np.vectorize(lambda x : x if x > 1e-4 * 1.0 / n_nodes else 0)
     #返回的是一个 参数 为 列表的函数
-    #lap = laplacian(a)
-    lap= a
+
+    lap = laplacian(a)
+    
     
 
     n_filters = len(taus)
@@ -109,11 +87,12 @@ def heat_diffusion_ind(graph, taus=TAUS, order = ORDER, proc = PROC):
 
     heat = {}
     for i in range(n_filters):
-            K = U.dot(np.diagflat(np.exp(-taus[i] * lamb).flatten())).dot(U.T)
-#            #K = U.dot(np.diagflat(np.arctan(-taus[i] * lamb).flatten())).dot(U.T)
-            
-            #heat[i]=sc.sparse.csc_matrix(K)
-            heat[i]=K
+        #type of K :  <class 'numpy.matrixlib.defmatrix.matrix'>
+        K = U.dot(np.diagflat(np.exp(-taus[i] * lamb).flatten())).dot(U.T)
+
+        
+        #heat[i]=sc.sparse.csc_matrix(K)
+        heat[i]=sc.matrix(K)
             
     # else:
     #     heat = {i: sc.sparse.csc_matrix((n_nodes, n_nodes)) for i in range(n_filters) } 
@@ -129,6 +108,73 @@ def heat_diffusion_ind(graph, taus=TAUS, order = ORDER, proc = PROC):
     #         heat[i] = sc.sparse.csc_matrix(temp)
  
     return heat, taus    #there is something wrong with this function ,this function may return heat with different type by different proc.
+
+
+def myfunc(heat):
+    tem=[]
+    for matrix in heat.values():
+        print("----------------------------------")
+        matrix.sort()  #如果sort没有指定axis ，默认按最后一个 axis排序，在这就是按行排序，或者说排序每行
+     
+        tem.append(matrix)
+
+    return np.column_stack(tem)  #横着组合
+    
+
+def myfunc2(heat):
+    
+   
+    heat[0].sort()  
+        
+    return heat[0]
+#对一个高维度数组打包装箱
+def bins(length,p,func):
+   
+    res=[]
+    start=0
+    rest=length
+
+    while rest!=0:
+        l=int(rest*p) if int(rest*p)!=0 else 1 
+        rest-=l
+        arr=np.zeros((length))
+        if(func=="sum"):
+            arr[start:start+l]=1
+        elif (func=="mean"):
+            arr[start:start+l]=1/l
+        res.append(arr)
+        start+=l
+    
+    return np.column_stack(res)
+
+def myfunc3(heat):
+    tmp2=[]
+    
+    bins_tran=bins(heat[0].shape[0],0.5,"sum")
+    for matrix in heat.values():
+        cp=matrix.copy()
+        cp.sort()
+        
+        
+        tmp2.append(cp.dot(bins_tran))
+    return np.column_stack(tmp2)
+
+
+
+
+def myfunc4(heat):
+    tmp2=[]
+    for mat in heat.values():
+        
+        lildata=mat.toarray()
+        lildata.sort(1)
+        tmp=[]
+        for row in lildata:
+            tmp.append(bins(row,0.1,np.sum))
+        tmp2.append(np.row_stack(tmp))
+    return np.column_stack(tmp2)
+
+
 
 
 def graphwave_alg(graph, time_pnts, taus= 'auto', 
@@ -176,71 +222,14 @@ def graphwave_alg(graph, time_pnts, taus= 'auto',
         taus = np.linspace(smin, smax, nb_filters)
     #这是模型的第一步，不可以省略
     heat_print, _ = heat_diffusion_ind(graph, list(taus), order=order, proc = proc)
+  
+
+    chi = charac_function_multiscale(heat_print, time_pnts)
+    #chi=myfunc3(heat_print)
+ 
     
-    print(heat_print[0])
-    #chi = charac_function_multiscale(heat_print, time_pnts)
-    chi=myfunc(heat_print)
-    
-    print(type(chi))
     print(chi.shape)
     
     
     return chi, heat_print, taus
 
-
-def myfunc(heat):
-    tem=[]
-    for matrix in heat.values():
-        print("----------------------------------")
-        
-        
-       
-      
-        
-    return np.column_stack(tem)  #横着组合
-        
-def myfunc2(heat):
-    
-   
-    lildata=heat[0].toarray() #type numpy.ndarray
-        
-    return np.sort(lildata)   
-#对一个高维度数组打包装箱
-def bins(arr,p,func):
-    res=[]
-    start=0
-    rest=len(arr)
-    l= 0
-    while rest!=0:
-        l=int(rest*p) if int(rest*p)!=0 else 1 
-        rest-=l
-        res.append(func(arr[start:start+l]))
-        start+=l
-    return res
-
-def myfunc3(heat):
-    tmp2=[]
-    for mat in heat.values():
-        
-        lildata=mat.toarray()
-        lildata.sort(1)
-        tmp=[]
-        for row in lildata:
-            tmp.append(bins(row,0.1,np.mean))
-        tmp2.append(np.row_stack(tmp))
-    return np.column_stack(tmp2)
-
-
-
-
-def myfunc4(heat):
-    tmp2=[]
-    for mat in heat.values():
-        
-        lildata=mat.toarray()
-        lildata.sort(1)
-        tmp=[]
-        for row in lildata:
-            tmp.append(bins(row,0.1,np.sum))
-        tmp2.append(np.row_stack(tmp))
-    return np.column_stack(tmp2)

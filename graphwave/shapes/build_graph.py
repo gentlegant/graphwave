@@ -3,12 +3,12 @@
 smaller subgraphs (of aparticular shape, defined in the shapes.py file)
 '''
 
-import graphwave
+import Graphwave
 import math
 import networkx as nx
 import numpy as np
 from shapes import *
-from graphwave.utils.utils import *
+from Graphwave.utils.utils import *
 import re
 
 #我定义的build图片的方法，从文件中加载
