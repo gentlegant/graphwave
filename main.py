@@ -12,9 +12,9 @@ from sklearn.preprocessing import StandardScaler
 
 import graphwave
 from graphwave.graphwave import *
+
 from graphwave.shapes import build_graph
-
-
+from graphwave.shapes.shapes import plot_networkx
 
 np.random.seed(123)
 #--------------------------------------------------------------------------------------
@@ -50,15 +50,20 @@ sb.set_style('white')
 #                                        savefig=False)
 
 #用我的function来加载图
+G=build_graph.get_graph_from_path("C:\\Users\\james\\Desktop\\graphwave\\graph\\europe-airports.edgelist")
+role_id=build_graph.get_role_from_path("C:\\Users\\james\\Desktop\\graphwave\\graph\\labels-europe-airports.txt")
+plot_networkx(G,role_id)
 
-G,role_id=build_graph.mybuild_structure("C:\\Users\\james\\Desktop\\graphwave\\graph\\europe-airports.edgelist","C:\\Users\\james\\Desktop\\graphwave\\graph\\labels-europe-airports.txt")
+print "number of edges",G.number_of_edges()
+print "number of nodes",G.number_of_nodes()
+print "matrix shape",nx.adj_matrix(G).shape
 
 
 chi, heat_print, taus = graphwave_alg(G, np.linspace(0,100,25), taus='auto', verbose=True)
 
 nb_clust = len(np.unique(role_id))
 
-print ('共有'+str(nb_clust)+'种角色')
+print (u'共有'+str(nb_clust)+u'种角色')
 
 pca = PCA(n_components=5)
 

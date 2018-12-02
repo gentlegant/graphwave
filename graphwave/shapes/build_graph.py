@@ -12,18 +12,22 @@ from graphwave.utils.utils import *
 import re
 
 #我定义的build图片的方法，从文件中加载
-def mybuild_structure(edge_path,label_path):
+def get_graph_from_path(edge_path):
    
     #也可以直接 用 矩阵转换
     #graph = nx.from_numpy_matrix(a1)
     graph= nx.Graph()
-    role_id=[]
+   
     with open(edge_path,'r') as edges:
         for i in edges:
             
             nums=re.findall(r"\d+",i)
      
             graph.add_edge( int(nums[0]) ,int(nums[1]))
+    return graph
+
+def get_role_from_path(label_path):
+    role_id=[]
     with open(label_path,'r') as role:
         role.readline()
         for i in role:
@@ -31,8 +35,8 @@ def mybuild_structure(edge_path,label_path):
             nums=re.findall(r"\d+",i)
 
             role_id.append(nums[1])
-    plot_networkx(graph,role_id)
-    return graph,role_id
+  
+    return role_id
 
 
 def build_structure(width_basis, basis_type, list_shapes, start=0,

@@ -1,18 +1,22 @@
 #coding=utf-8 
 import copy
 import math
+import os
+import sys
+
 import matplotlib.pyplot as plt
 import networkx as nx
 import numpy as np
 import scipy as sc
+from sklearn.cluster import KMeans
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-from sklearn.cluster import KMeans
-import sys, os
+
+from characteristic_functions import (charac_function,
+                                      charac_function_multiscale)
+from utils.graph_tools import laplacian
 
 sys.path.append('../')
-from characteristic_functions import charac_function, charac_function_multiscale
-from utils.graph_tools import laplacian
 
 
 TAUS = [1, 10, 25, 50]
@@ -89,6 +93,7 @@ def heat_diffusion_ind(graph, taus=TAUS, order = ORDER, proc = PROC):
     '''
     # Compute Laplacian
     a = nx.adjacency_matrix(graph)
+   
     n_nodes, _ = a.shape
     
     thres = np.vectorize(lambda x : x if x > 1e-4 * 1.0 / n_nodes else 0)
@@ -98,29 +103,30 @@ def heat_diffusion_ind(graph, taus=TAUS, order = ORDER, proc = PROC):
     
 
     n_filters = len(taus)
-    if proc == 'exact':
+    # if proc == 'exact':
         ### Compute the exact signature
-        lamb, U = np.linalg.eigh(lap.todense())
-    
-        heat = {}
-        for i in range(n_filters):
-             K = U.dot(np.diagflat(np.exp(-taus[i] * lamb).flatten())).dot(U.T)
+    lamb, U = np.linalg.eigh(lap.todense())
+
+    heat = {}
+    for i in range(n_filters):
+            K = U.dot(np.diagflat(np.exp(-taus[i] * lamb).flatten())).dot(U.T)
 #            #K = U.dot(np.diagflat(np.arctan(-taus[i] * lamb).flatten())).dot(U.T)
-             
-             heat[i]=sc.sparse.csc_matrix(K)
-             #heat[i]=K
-             #heat[i] = U.dot(np.diagflat(np.exp(- taus[i] * lamb).flatten())).dot(U.T)
-    else:
-        heat = {i: sc.sparse.csc_matrix((n_nodes, n_nodes)) for i in range(n_filters) } 
-        #this create a dict with n_filters empyt sparse matrix
-        monome = {0: sc.sparse.eye(n_nodes), 1: lap - sc.sparse.eye(n_nodes)}
-        for k in range(2, order + 1):
-             monome[k] = 2 * (lap - sc.sparse.eye(n_nodes)).dot(monome[k-1]) - monome[k - 2]
-        for i in range(n_filters):
-            coeffs = compute_cheb_coeff_basis(taus[i], order)
-            heat[i] = sc.sum([ coeffs[k] * monome[k] for k in range(0, order + 1)])
-            temp = thres(heat[i].A) # cleans up the small coefficients
-            heat[i] = sc.sparse.csc_matrix(temp)
+            
+            #heat[i]=sc.sparse.csc_matrix(K)
+            heat[i]=K
+            
+    # else:
+    #     heat = {i: sc.sparse.csc_matrix((n_nodes, n_nodes)) for i in range(n_filters) } 
+    #     #this create a dict with n_filters empyt sparse matrix
+    #     monome = {0: sc.sparse.eye(n_nodes), 1: lap - sc.sparse.eye(n_nodes)}
+    #     for k in range(2, order + 1):
+    #          monome[k] = 2 * (lap - sc.sparse.eye(n_nodes)).dot(monome[k-1]) - monome[k - 2]
+    #     for i in range(n_filters):
+    #         coeffs = compute_cheb_coeff_basis(taus[i], order)
+    #         heat[i] = sc.sum([ coeffs[k] * monome[k] for k in range(0, order + 1)])
+    #         temp = thres(heat[i].A) # cleans up the small coefficients
+            
+    #         heat[i] = sc.sparse.csc_matrix(temp)
  
     return heat, taus    #there is something wrong with this function ,this function may return heat with different type by different proc.
 
@@ -168,22 +174,12 @@ def graphwave_alg(graph, time_pnts, taus= 'auto',
         smax = -np.log(ETA_MIN) * np.sqrt( 0.5 / l1)
         smin = -np.log(ETA_MAX) * np.sqrt( 0.5 / l1)
         taus = np.linspace(smin, smax, nb_filters)
+    #这是模型的第一步，不可以省略
     heat_print, _ = heat_diffusion_ind(graph, list(taus), order=order, proc = proc)
-
     
-    
-   
-    
-    
-    
-  
-    
-
-
-
-
-    chi = charac_function_multiscale(heat_print, time_pnts)
-    #chi=myfunc(heat_print)
+    print(heat_print[0])
+    #chi = charac_function_multiscale(heat_print, time_pnts)
+    chi=myfunc(heat_print)
     
     print(type(chi))
     print(chi.shape)
@@ -196,11 +192,10 @@ def myfunc(heat):
     tem=[]
     for matrix in heat.values():
         print("----------------------------------")
-        lildata=matrix.toarray() #type numpy.ndarray
-        lildata.sort(1)  #axis=1 对行排序
+        
         
        
-        tem.append(np.sort(lildata))
+      
         
     return np.column_stack(tem)  #横着组合
         
