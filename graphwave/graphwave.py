@@ -225,11 +225,9 @@ def graphwave_alg(graph, time_pnts, taus= 'auto',
   
 
     chi = charac_function_multiscale(heat_print, time_pnts)
-    #chi=myfunc3(heat_print)
- 
-    
-    print(chi.shape)
+    chi1=myfunc3(heat_print)
+
     
     
-    return chi, heat_print, taus
+    return chi,chi1, heat_print, taus
 
