@@ -44,27 +44,27 @@ sb.set_style('white')
 
 ### 4. Pass all these parameters to the Graph Structure
 
-# G, communities, _ , role_id = build_graph.build_structure(width_basis, basis_type, list_shapes, start=0,
-#                                        add_random_edges=add_edges, plot=True,
-#                                        savefig=False)
+G, communities, _ , role_id = build_graph.build_structure(width_basis, basis_type, list_shapes, start=0,
+                                       add_random_edges=add_edges, plot=True,
+                                       savefig=False)
 
 #用我的function来加载图
-G=build_graph.get_graph_from_path("C:\\Users\\james\\Desktop\\graphwave\\graph\\europe-airports.edgelist")
-role_id=build_graph.get_role_from_path("C:\\Users\\james\\Desktop\\graphwave\\graph\\labels-europe-airports.txt")
-plot_networkx(G,role_id)
+# G=build_graph.get_graph_from_path("C:\\Users\\james\\Desktop\\graphwave\\graph\\europe-airports.edgelist")
+# role_id=build_graph.get_role_from_path("C:\\Users\\james\\Desktop\\graphwave\\graph\\labels-europe-airports.txt")
+# plot_networkx(G,role_id)
 
 print "number of edges",G.number_of_edges()
 print "number of nodes",G.number_of_nodes()
 
 
-#chi是根据特征函数的embedding，chi1是根据myfunction 的embedding
-emb1,emb2, heat_print, taus = graphwave_alg(G, np.linspace(0,100,25), taus=[0.8,1], verbose=True)
+#emb1是根据特征函数的embedding，emb2是根据myfunction 的embedding
+emb1,emb2, heat_print, taus = graphwave_alg(G, np.linspace(0,100,100), taus=[0.8,1], verbose=True)
 
 
 tPlot, axes = plt.subplots(
         nrows=len(np.unique(role_id)), ncols=4, sharex=True, sharey=False,        
         )
-tPlot.suptitle('能量值', fontsize=20)
+tPlot.suptitle(u'能量值', fontsize=20)
 
 for index,c in  enumerate(np.unique(role_id)):
     indc = [i for i, x in enumerate(role_id) if x == c] 
@@ -77,9 +77,9 @@ for index,c in  enumerate(np.unique(role_id)):
     axes[index][2].bar(range(len(c)),d)
     axes[index][3].bar(range(len(c)),c)
 
-
+print("123")
 plt.show()
-
+print("123")
 
 
 nb_clust = len(np.unique(role_id))
@@ -129,9 +129,9 @@ for c in np.unique(role_id):
     indc = [i for i, x in enumerate(role_id) if x == c]   #role_id 相同的  下标
    
  
-    print(u"根据character 类内 第一维 方差")
+   # print("根据character 类内 第一维 方差")
     print(np.var(trans_data[indc, 0]))
-    print(u"根据我的模型   类内 第一维 方差")
+    #print("根据我的模型   类内 第一维 方差")
     print(np.var(trans_data1[indc, 0]))
     axes[0].scatter(trans_data[indc, 0], trans_data[indc, 1],
                 c=np.array(col)[list(np.array(labels_pred)[indc])],
@@ -148,4 +148,22 @@ for label, x, y in zip(role_id, trans_data[:, 0], trans_data[:, 1]):
 for label, x, y in zip(role_id, trans_data1[:, 0], trans_data1[:, 1]):  
     axes[1].annotate(label, xy=(x, y), xytext=(0, 0), textcoords='offset points')
  
+plt.show()
+
+
+#最后，对于每个类展示特征函数的走向
+ind_x=range(emb1.shape[1])[0::2]
+ind_y=range(emb1.shape[1])[1::2]
+
+
+for c in np.unique(role_id):
+    indc = [i for i, x in enumerate(role_id) if x == c]   #role_id 相同的  下标
+    choose2=np.random.choice(indc,2,replace=False)
+    for i in choose2:
+   
+        X=emb1.getA()[i][ind_x]
+     
+        Y=emb1.getA()[i][ind_y]
+     
+        plt.plot(X,Y,label=str(i) )
 plt.show()
